@@ -47,7 +47,7 @@ Example Usage
 
 To run the Caesar Cipher encryption:
 
-  ```compiler
+  ```bash
   java CaesarCipher
 
 
