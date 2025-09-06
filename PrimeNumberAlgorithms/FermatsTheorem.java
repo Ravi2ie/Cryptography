@@ -61,7 +61,7 @@ public class FermatsTheorem {
         System.out.print("Enter the exponent: ");
         long exp = scanner.nextLong();
 
-        long result = modPow(a, exp, p);
+        long result = modPow(a, exp%(p-1), p);
         System.out.println(a + "^" + exp + " mod " + p + " = " + result);
 
         long result1=modPow(a,p-1,p);
