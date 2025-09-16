@@ -1,8 +1,7 @@
 import java.util.Scanner;
 
-public class DESSubKeyGenerator {
+public class SimpleDESSubKeyGeneratorMinimal {
 
-    // PC-1: 64 → 56 bits (drops parity bits)
     private static final int[] PC1 = {
         57,49,41,33,25,17,9,
         1,58,50,42,34,26,18,
@@ -14,13 +13,6 @@ public class DESSubKeyGenerator {
         21,13,5,28,20,12,4
     };
 
-    // Left shifts per round
-    private static final int[] SHIFTS = {
-        1,1,2,2,2,2,2,2,
-        1,2,2,2,2,2,2,1
-    };
-
-    // PC-2: 56 → 48 bits (subkey selection)
     private static final int[] PC2 = {
         14,17,11,24,1,5,3,28,
         15,6,21,10,23,19,12,4,
@@ -30,88 +22,53 @@ public class DESSubKeyGenerator {
         34,53,46,42,50,36,29,32
     };
 
-    // Get bit from 64-bit key (MSB=1)
-    private static int getBit64(long v, int pos) {
-        return (int)((v >>> (64 - pos)) & 1L);
-    }
+    private static final int[] SHIFTS = {
+        1,1,2,2,2,2,2,2,
+        1,2,2,2,2,2,2,1
+    };
 
-    // Get bit from 56-bit key
-    private static int getBit56(long v, int pos) {
-        return (int)((v >>> (56 - pos)) & 1L);
-    }
-
-    // Set bit in 56-bit value
-    private static long setBit56(long v, int pos, int bit) {
-        if (bit == 1) v |= (1L << (56 - pos));
-        return v;
-    }
-
-    // Apply PC-1
-    private static long applyPC1(long key64) {
-        long out56 = 0L;
-        for (int i = 0; i < PC1.length; i++) {
-            int b = getBit64(key64, PC1[i]);
-            out56 = setBit56(out56, i + 1, b);
+    // Permutation function
+    private static String permute(String input, int[] table) {
+        StringBuilder sb = new StringBuilder();
+        for (int pos : table) {
+            sb.append(input.charAt(pos - 1)); // 1-based indexing
         }
-        return out56;
+        return sb.toString();
     }
 
-    // Left rotate 28-bit half
-    private static int rot28(int v, int shifts) {
-        v &= 0x0FFFFFFF;
-        return ((v << shifts) | (v >>> (28 - shifts))) & 0x0FFFFFFF;
-    }
-
-    // Combine C and D halves into 56 bits
-    private static long combineCD(int C, int D) {
-        return ((long)C << 28) | (long)D;
-    }
-
-    // Apply PC-2
-    private static long applyPC2(long cd56) {
-        long out48 = 0L;
-        for (int i = 0; i < PC2.length; i++) {
-            int b = getBit56(cd56, PC2[i]);
-            if (b == 1) out48 |= (1L << (48 - (i + 1)));
-        }
-        return out48;
-    }
-
-    // Format 48-bit subkey as 12 hex digits
-    private static String toHex48(long v48) {
-        return String.format("%012X", v48 & 0xFFFFFFFFFFFFL);
+    // Left circular shift
+    private static String leftShift(String bits, int n) {
+        return bits.substring(n) + bits.substring(0, n);
     }
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 
-        System.out.println("=== DES Subkey Generator ===");
-        System.out.print("Enter 64-bit key in hex (16 hex chars): ");
-        String hex = sc.next().trim();
+        System.out.println("=== DES Subkey Generator (Minimal, binary only) ===");
+        System.out.print("Enter 64-bit key as binary string (64 chars 0/1): ");
+        String key64 = sc.next().trim();
 
-        // Clean input
-        hex = hex.replaceAll("[^0-9A-Fa-f]", "");
-        while (hex.length() < 16) hex = "0" + hex;
-        if (hex.length() > 16) hex = hex.substring(hex.length() - 16);
+        if (key64.length() != 64 || !key64.matches("[01]+")) {
+            System.out.println("Invalid input. Please enter exactly 64 bits.");
+            return;
+        }
 
-        // Convert hex → 64-bit number
-        long key64 = Long.parseUnsignedLong(hex, 16);
+        // Apply PC-1: 64 → 56 bits
+        String key56 = permute(key64, PC1);
 
-        // Apply PC-1 → 56-bit
-        long key56 = applyPC1(key64);
+        // Split into C and D halves
+        String C = key56.substring(0, 28);
+        String D = key56.substring(28);
 
-        // Split into C and D halves (28 bits each)
-        int C = (int)((key56 >>> 28) & 0x0FFFFFFF);
-        int D = (int)(key56 & 0x0FFFFFFF);
+        System.out.println("\nRound Subkeys (binary):");
+        for (int i = 0; i < 16; i++) {
+            C = leftShift(C, SHIFTS[i]);
+            D = leftShift(D, SHIFTS[i]);
 
-        // Generate 16 subkeys
-        System.out.println("\nRound Subkeys:");
-        for (int round = 0; round < 16; round++) {
-            C = rot28(C, SHIFTS[round]);   // shift C
-            D = rot28(D, SHIFTS[round]);   // shift D
-            long cd = combineCD(C, D);     // merge
-            long subkey = applyPC2(cd);    // apply PC-2
-            System.out.printf("K%-2d = %s%n", round + 1, toHex48(subkey));
+            String CD = C + D;
+            String subkey48 = permute(CD, PC2);
+
+            System.out.printf("K%-2d = %s%n", i + 1, subkey48);
         }
 
         System.out.println("\nEncrypt: K1..K16, Decrypt: K16..K1");
