@@ -50,6 +50,9 @@ public class EulerTheorem {
         System.out.print("Enter integer n (modulus): ");
         long n = scanner.nextLong();
 
+        System.out.print("Enter the exponent: ");
+        long exp = scanner.nextLong();
+
         if (gcd(a, n) != 1) {
             System.out.println("a and n are not coprime; Euler's theorem doesn't apply.");
             scanner.close();
@@ -59,10 +62,15 @@ public class EulerTheorem {
         long phiN = phi(n);
         System.out.println("phi(" + n + ") = " + phiN);
 
-        long lhs = modPow(a, phiN, n);
-        System.out.println(a + "^" + phiN + " mod " + n + " = " + lhs);
+        
+        long result = modPow(a, exp%phiN, n);
+        System.out.println(a + "^" + exp + " mod " + n + " = " + result);
 
-        System.out.println("According to Euler's theorem, this should be 1.");
+        long result1=modPow(a, phiN, n);
+
+        System.out.println(a + "^" + phiN + " mod " + n + " = " + result1);
+        System.out.println("Since exponent = phi(" + n + "), Euler's theorem predicts result = 1.");
+        
 
         scanner.close();
     }

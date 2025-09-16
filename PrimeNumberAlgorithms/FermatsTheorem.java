@@ -12,20 +12,21 @@ public class FermatsTheorem {
         return a;
     }
 
-    // Modular exponentiation (a^b mod m)
+    // Modular exponentiation (a^b mod m) using fast exponentiation
     public static long modPow(long base, long exponent, long modulus) {
         long result = 1;
         base = base % modulus;
         while (exponent > 0) {
-            if ((exponent & 1) == 1) {
+            if ((exponent & 1) == 1) { // if exponent is odd
                 result = (result * base) % modulus;
             }
             base = (base * base) % modulus;
-            exponent >>= 1;
+            exponent >>= 1; // divide exponent by 2
         }
         return result;
     }
 
+    // Check primality
     public static boolean isPrime(long n) {
         if (n <= 1) return false;
         if (n <= 3) return true;
@@ -52,14 +53,23 @@ public class FermatsTheorem {
         }
 
         if (gcd(a, p) != 1) {
-            System.out.println("Error: a and p must be coprime (gcd(a,p) = 1) for Fermat's theorem to apply.");
+            System.out.println("Error: a and p must be coprime (gcd(a,p) = 1).");
             scanner.close();
             return;
         }
 
-        long result = modPow(a, p - 1, p);
-        System.out.println(a + "^" + (p - 1) + " mod " + p + " = " + result);
+        System.out.print("Enter the exponent: ");
+        long exp = scanner.nextLong();
+
+        long result = modPow(a, exp%(p-1), p);
+        System.out.println(a + "^" + exp + " mod " + p + " = " + result);
+
+        long result1=modPow(a,p-1,p);
+        System.out.println(a+"^"+(p-1)+" mod "+p+" = "+result1);
+        // Extra check: Fermat’s theorem case
+        
         System.out.println("According to Fermat's Little Theorem, this should be 1.");
+        
 
         scanner.close();
     }
